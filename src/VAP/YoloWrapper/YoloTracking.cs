@@ -32,6 +32,7 @@ namespace Wrapper.Yolo
 
         public List<YoloTrackingItem> Analyse(byte[] imageData, HashSet<string> category, Brush bboxColor)
         {
+            Console.WriteLine("** Analyse image locally.");
             var items = this._yoloWrapper.Track(imageData);
             if (items == null || items.Count() == 0)
             {

@@ -23,6 +23,7 @@ namespace DNNDetector.Model
         public string TriggerLine { get; set; }
         public int TriggerLineID { get; set; }
         public string Model { get; set; }
+        public TimeSpan ElapsedTime { get; set; }
 
         public Item(int x, int y, int width, int height, int catId, string catName, double confidence, int lineID, string lineName)
         {
@@ -63,8 +64,7 @@ namespace DNNDetector.Model
 
         public void Print()
         {
-            Console.WriteLine("{0} {1,-5} {2} {3,-5} {4} {5,-5} {6} {7,-10} {8} {9,-10:N2}",
-                                    "Index:", Index, "ObjID:", ObjId, "TrackID:", TrackId, "Type:", ObjName, "Conf:", Confidence);
+            Console.WriteLine($"Index:{Index} ObjID:{ObjId} TrackID:{TrackId} Type:{ObjName} Conf:{Confidence} at: {ElapsedTime}");
         }
     }
 }

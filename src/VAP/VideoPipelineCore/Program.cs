@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using TFDetector;
+using Utils;
 
 namespace VideoPipelineCore
 {
@@ -45,17 +46,23 @@ namespace VideoPipelineCore
             int SAMPLING_FACTOR = int.Parse(args[2]);
             double RESOLUTION_FACTOR = double.Parse(args[3]);
 
-            HashSet<string> category = new HashSet<string>();
+            HashSet<string> categories = new HashSet<string>();
             for (int i = 4; i < args.Length; i++)
             {
-                category.Add(args[i]);
+                categories.Add(args[i]);
+            }
+
+            if (categories.Contains("all"))
+            {
+                categories.Clear();
+                categories = new List<string>() { "bicycle", "car" }.ToHashSet<string>();
             }
 
             //initialize pipeline settings
             int pplConfig = Convert.ToInt16(ConfigurationManager.AppSettings["PplConfig"]);
             bool loop = false;
             bool displayRawVideo = true;
-            bool displayBGSVideo = false;
+            bool displayBGSVideo = true;
             Utils.Utils.cleanFolderAll();
 
             //create pipeline components (initialization based on pplConfig)
@@ -160,6 +167,7 @@ namespace VideoPipelineCore
 
             int frameIndex = 0;
             int videoTotalFrame = 0;
+            double videoFramePerSecond = decoder.getVideoFPS();
             if (!isVideoStream)
                 videoTotalFrame = decoder.getTotalFrameNum() - 1; //skip the last frame which could be wrongly encoded from vlc capture
 
@@ -168,6 +176,8 @@ namespace VideoPipelineCore
             //RUN PIPELINE 
             DateTime startTime = DateTime.Now;
             DateTime prevTime = DateTime.Now;
+            TimeSpan elsapsedTime = TimeSpan.Zero;
+            List<Item> items = new List<Item>();
             while (true)
             {
                 if (!loop)
@@ -181,10 +191,12 @@ namespace VideoPipelineCore
                 //decoder
                 Mat frame = decoder.getNextFrame();
 
-                
                 //frame pre-processor
                 frame = FramePreProcessor.PreProcessor.returnFrame(frame, frameIndex, SAMPLING_FACTOR, RESOLUTION_FACTOR, displayRawVideo);
                 frameIndex++;
+                elsapsedTime = TimeSpan.FromMilliseconds(frameIndex * 1000 / videoFramePerSecond);
+
+
                 if (frame == null) continue;
                 //Console.WriteLine("Frame ID: " + frameIndex);
 
@@ -195,7 +207,7 @@ namespace VideoPipelineCore
                 
 
                 //line detector
-                if (new int[] { 0, 3, 4, 5, 6, 7 }.Contains(pplConfig))
+                if (new int[] { 0, 1, 3, 4, 5, 6, 7 }.Contains(pplConfig))
                 {
                     (counts, occupancy) = lineDetector.updateLineResults(frame, frameIndex, fgmask, foregroundBoxes);
                 }
@@ -204,17 +216,17 @@ namespace VideoPipelineCore
                 //cheap DNN
                 if (new int[] { 3, 4 }.Contains(pplConfig))
                 {
-                    ltDNNItemListDarknet = ltDNNDarknet.Run(frame, frameIndex, counts, lines, category);
+                    ltDNNItemListDarknet = ltDNNDarknet.Run(frame, frameIndex, counts, lines, categories);
                     ItemList = ltDNNItemListDarknet;
                 }
                 else if (new int[] { 5, 6 }.Contains(pplConfig))
                 {
-                    ltDNNItemListTF = ltDNNTF.Run(frame, frameIndex, counts, lines, category);
+                    ltDNNItemListTF = ltDNNTF.Run(frame, frameIndex, counts, lines, categories);
                     ItemList = ltDNNItemListTF;
                 }
                 else if (new int[] { 7 }.Contains(pplConfig))
                 {
-                    ltDNNItemListOnnx = ltDNNOnnx.Run(frame, frameIndex, counts, Utils.Utils.ConvertLines(lines), Utils.Utils.CatHashSet2Dict(category), ref teleCountsCheapDNN, true);
+                    ltDNNItemListOnnx = ltDNNOnnx.Run(frame, frameIndex, counts, Utils.Utils.ConvertLines(lines), Utils.Utils.CatHashSet2Dict(categories), ref teleCountsCheapDNN, true);
                     ItemList = ltDNNItemListOnnx;
                 }
 
@@ -222,12 +234,12 @@ namespace VideoPipelineCore
                 //heavy DNN
                 if (new int[] { 3 }.Contains(pplConfig))
                 {
-                    ccDNNItemListDarknet = ccDNNDarknet.Run(frame, frameIndex, ltDNNItemListDarknet, lines, category);
+                    ccDNNItemListDarknet = ccDNNDarknet.Run(frame, frameIndex, ltDNNItemListDarknet, lines, categories);
                     ItemList = ccDNNItemListDarknet;
                 }
                 else if (new int[] { 7 }.Contains(pplConfig))
                 {
-                    ccDNNItemListOnnx = ccDNNOnnx.Run(frameIndex, ItemList, Utils.Utils.ConvertLines(lines), Utils.Utils.CatHashSet2Dict(category), ref teleCountsHeavyDNN, true);
+                    ccDNNItemListOnnx = ccDNNOnnx.Run(frameIndex, ItemList, Utils.Utils.ConvertLines(lines), Utils.Utils.CatHashSet2Dict(categories), ref teleCountsHeavyDNN, true);
                     ItemList = ccDNNItemListOnnx;
                 }
 
@@ -235,7 +247,7 @@ namespace VideoPipelineCore
                 //frameDNN with Darknet Yolo
                 if (new int[] { 1 }.Contains(pplConfig))
                 {
-                    frameDNNDarknetItemList = frameDNNDarknet.Run(Utils.Utils.ImageToByteBmp(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frame)), frameIndex, lines, category, System.Drawing.Brushes.Pink);
+                    frameDNNDarknetItemList = frameDNNDarknet.Run(Utils.Utils.ImageToByteBmp(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frame)), frameIndex, lines, categories, System.Drawing.Brushes.Pink);
                     ItemList = frameDNNDarknetItemList;
                 }
 
@@ -243,7 +255,7 @@ namespace VideoPipelineCore
                 //frame DNN TF
                 if (new int[] { 2 }.Contains(pplConfig))
                 {
-                    frameDNNTFItemList = frameDNNTF.Run(frame, frameIndex, category, System.Drawing.Brushes.Pink, 0.2);
+                    frameDNNTFItemList = frameDNNTF.Run(frame, frameIndex, categories, System.Drawing.Brushes.Pink, 0.2);
                     ItemList = frameDNNTFItemList;
                 }
 
@@ -251,7 +263,7 @@ namespace VideoPipelineCore
                 //frame DNN ONNX Yolo
                 if (new int[] { 8 }.Contains(pplConfig))
                 {
-                    frameDNNONNXItemList = frameDNNOnnxYolo.Run(frame, frameIndex, Utils.Utils.CatHashSet2Dict(category), System.Drawing.Brushes.Pink, 0, DNNConfig.MIN_SCORE_FOR_LINEBBOX_OVERLAP_SMALL, true);
+                    frameDNNONNXItemList = frameDNNOnnxYolo.Run(frame, frameIndex, Utils.Utils.CatHashSet2Dict(categories), System.Drawing.Brushes.Pink, 0, DNNConfig.MIN_SCORE_FOR_LINEBBOX_OVERLAP_SMALL, true);
                     ItemList = frameDNNONNXItemList;
                 }
 
@@ -259,7 +271,7 @@ namespace VideoPipelineCore
                 //Azure Machine Learning
                 if (new int[] { 6 }.Contains(pplConfig))
                 {
-                    amlConfirmed = AMLCaller.Run(frameIndex, ItemList, category).Result;
+                    amlConfirmed = AMLCaller.Run(frameIndex, ItemList, categories).Result;
                 }
 
 
@@ -280,18 +292,25 @@ namespace VideoPipelineCore
                     {
                         if (!kvpairs.ContainsKey(it.TriggerLine))
                             kvpairs.Add(it.TriggerLine, "1");
+                        it.ElapsedTime = elsapsedTime;
+                        items.Add(it);
                     }
+                    
                     FramePreProcessor.FrameDisplay.updateKVPairs(kvpairs);
                 }
-
 
                 //print out stats
                 double fps = 1000 * (double)(1) / (DateTime.Now - prevTime).TotalMilliseconds;
                 double avgFps = 1000 * (long)frameIndex / (DateTime.Now - startTime).TotalMilliseconds;
-                Console.WriteLine("{0} {1,-5} {2} {3,-5} {4} {5,-15} {6} {7,-10:N2} {8} {9,-10:N2}", 
-                                    "sFactor:", SAMPLING_FACTOR, "rFactor:", RESOLUTION_FACTOR, "FrameID:", frameIndex, "FPS:", fps, "avgFPS:", avgFps);
+                Console.WriteLine($"sFactor:{SAMPLING_FACTOR} rFactor:{RESOLUTION_FACTOR} frameID:{frameIndex} FPS:{fps} avgFPS:{avgFps} time:{elsapsedTime}");
                 prevTime = DateTime.Now;
             }
+
+            foreach (var item in items)
+            {
+                item.Print();
+            }
+
             Console.WriteLine("Done!");
         }
     }

@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="$(SystemDrawingCommonVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ContentWithTargetPath Include="Dependencies\opencv_world340d.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>x64\opencv_world340d.dll</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Dependencies\opencv_world340.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>x64\opencv_world340.dll</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Dependencies\yolo_cpp_dll_gpu_cc.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>x64\yolo_cpp_dll_gpu_cc.dll</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Dependencies\yolo_cpp_dll_gpu_lt.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>x64\yolo_cpp_dll_gpu_lt.dll</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Dependencies\yolo_cpp_dll_cpu.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>x64\yolo_cpp_dll_cpu.dll</TargetPath>
+    </ContentWithTargetPath>
+    <ContentWithTargetPath Include="Dependencies\pthreadVC2.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>x64\pthreadVC2.dll</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+
+</Project>

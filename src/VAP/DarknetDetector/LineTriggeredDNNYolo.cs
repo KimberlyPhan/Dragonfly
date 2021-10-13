@@ -48,21 +48,22 @@ namespace DarknetDetector
                     int diff = Math.Abs(counts[lane] - counts_prev[lane]);
                     if (diff > 0) //object detected by BGS-based counter
                     {
-                        if (frameIndex >= DNNConfig.FRAME_SEARCH_RANGE)
+                        Mat[] frameBufferArray = frameBufferLtDNNYolo.ToArray();
+                        if (frameIndex >= frameBufferArray.Count())
                         {
                             // call yolo for crosscheck
                             int lineID = Array.IndexOf(counts.Keys.ToArray(), lane);
                             frameDNNYolo.SetTrackingPoint(new System.Drawing.Point((int)((lines[lineID].coordinates.p1.X + lines[lineID].coordinates.p2.X) / 2),
                                                                 (int)((lines[lineID].coordinates.p1.Y + lines[lineID].coordinates.p2.Y) / 2))); //only needs to check the last line in each row
-                            Mat[] frameBufferArray = frameBufferLtDNNYolo.ToArray();
+                            
                             int frameIndexYolo = frameIndex - 1;
                             DateTime start = DateTime.Now;
                             List<YoloTrackingItem> analyzedTrackingItems = null;
 
-                            while (frameIndex - frameIndexYolo < DNNConfig.FRAME_SEARCH_RANGE)
+                            while (frameIndex - frameIndexYolo < frameBufferArray.Count())
                             {
-                                Console.WriteLine("** Calling DarkNet Cheap on " + (DNNConfig.FRAME_SEARCH_RANGE - (frameIndex - frameIndexYolo)));
-                                Mat frameYolo = frameBufferArray[DNNConfig.FRAME_SEARCH_RANGE - (frameIndex - frameIndexYolo)];
+                                Console.WriteLine($"** Calling DarkNet Cheap on {frameBufferArray.Count() - (frameIndex - frameIndexYolo)}");
+                                Mat frameYolo = frameBufferArray[frameBufferArray.Count() - (frameIndex - frameIndexYolo)];
                                 byte[] imgByte = Utils.Utils.ImageToByteBmp(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frameYolo));
 
                                 analyzedTrackingItems = frameDNNYolo.Detect(imgByte, category, lineID, System.Drawing.Brushes.Pink, DNNConfig.MIN_SCORE_FOR_LINEBBOX_OVERLAP_LARGE, frameIndexYolo);

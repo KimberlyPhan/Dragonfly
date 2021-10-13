@@ -88,7 +88,7 @@ namespace LineDetector
                     int diff = Math.Abs(counts[lane] - counts_prev[lane]);
                     if (diff > 0) //object detected by BGS-based counter
                     {
-                        Console.WriteLine($"Line: {lane}\tCounts: {counts[lane]}");
+                        Console.WriteLine($"BGS-based detected Line: {lane}\tCounts: {counts[lane]}");
                         string blobName_BGS = $@"frame-{frameIndex}-BGS-{lane}-{counts[lane]}.jpg";
                         string fileName_BGS = @OutputFolder.OutputFolderBGSLine + blobName_BGS;
                         frame.SaveImage(fileName_BGS);

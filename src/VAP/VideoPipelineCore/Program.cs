@@ -55,14 +55,22 @@ namespace VideoPipelineCore
             if (categories.Contains("all"))
             {
                 categories.Clear();
-                categories = new List<string>() { "bicycle", "car" }.ToHashSet<string>();
+                categories = new List<string>() { "person", "bicycle", "car", "motorcycle", 
+                    "truck", "boat", "dog", "horse", "backpack", "umbrella", "handbag", "tie", 
+                    "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", 
+                    "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "" +
+                    "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", 
+                    "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch", "potted plant", "bed", 
+                    "dining table", "toilet", "tv", "laptop", "mouse", "keyboard", "cell phone", "microwave", 
+                    "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", 
+                    "hair drier", "toothbrush" }.ToHashSet<string>();
             }
 
             //initialize pipeline settings
             int pplConfig = Convert.ToInt16(ConfigurationManager.AppSettings["PplConfig"]);
             bool loop = false;
-            bool displayRawVideo = true;
-            bool displayBGSVideo = true;
+            bool displayRawVideo = false;
+            bool displayBGSVideo = false;
             Utils.Utils.cleanFolderAll();
 
             //create pipeline components (initialization based on pplConfig)
@@ -294,6 +302,7 @@ namespace VideoPipelineCore
                             kvpairs.Add(it.TriggerLine, "1");
                         it.ElapsedTime = elsapsedTime;
                         items.Add(it);
+                        it.Print();
                     }
                     
                     FramePreProcessor.FrameDisplay.updateKVPairs(kvpairs);

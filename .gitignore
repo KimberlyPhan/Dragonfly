@@ -8,3 +8,5 @@ packages/
 /src/VAP/YoloWrapper/Dependencies/opencv_world340d.dll
 /src/VAP/YoloWrapper/Yolo.Config/YoloV3Coco/yolov3.weights
 /src/VAP/YoloWrapper/Yolo.Config/YoloV3TinyCoco/yolov3-tiny.weights
+/media
+/modelOnnx

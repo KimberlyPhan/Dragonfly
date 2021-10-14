@@ -67,7 +67,7 @@ namespace DNNDetector
                                 File.WriteAllBytes(@OutputFolder.OutputFolderAll + blobName_Heavy, item.TaggedImageData);
                             }
 
-                            return ccDNNItem; // if we only return the closest object detected by heavy model
+                            //return ccDNNItem; // if we only return the closest object detected by heavy model
                         }
                     }
                     else

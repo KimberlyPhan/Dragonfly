@@ -8,4 +8,8 @@
     <PackageReference Include="OpenCvSharp4" Version="$(OpenCvSharp4Version)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Utils\Utils.csproj" />
+  </ItemGroup>
+
 </Project>

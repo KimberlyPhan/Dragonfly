@@ -39,7 +39,9 @@ namespace Wrapper.Yolo
                 return null;
             }
 
-            var probableObject = this.FindAllMatch(items, this._maxDistance, category);
+            // Dragonfly Don't care about distance or category or lines
+            //var probableObject = this.FindAllMatch(items, this._maxDistance, category);
+            var probableObject = items;
             if (probableObject.Count() == 0)
             {
                 return null;

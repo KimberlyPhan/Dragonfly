@@ -3,7 +3,7 @@
 
 ﻿using System;
 using System.Drawing;
-
+using Utils;
 using OpenCvSharp;
 
 namespace BGSObjectDetector
@@ -60,10 +60,6 @@ namespace BGSObjectDetector
             this.Timestamp = timestamp;
             this.Time = time;
             this.Rectangle = new Rectangle(x0, y0, x1 - x0, y1 - y0);
-            //this.X0 = x0;
-            //this.X1 = x1;
-            //this.Y0 = y0;
-            //this.Y1 = y1;
 
             this.ID = id;
 
@@ -80,6 +76,11 @@ namespace BGSObjectDetector
             double f0 = (intersection.Width * intersection.Height) / (double)(b0.Width * b0.Height);
             double f1 = (intersection.Width * intersection.Height) / (double)(b1.Width * b1.Height);
             return Math.Max(f0, f1);
+        }
+
+        public override string ToString()
+        {
+            return $" Rec: {Rectangle.ToJsonForLogging()} Center: {Center.ToJsonForLogging()}";
         }
     }
 }

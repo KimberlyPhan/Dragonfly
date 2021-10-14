@@ -17,6 +17,7 @@ namespace DNNDetector.Model
         public int ObjId { get; set; }
         public int TrackId { get; set; }
         public int Index { get; set; }
+        public int FrameIndex { get; set; }
         public byte[] RawImageData { get; set; }
         public byte[] TaggedImageData { get; set; }
         public byte[] CroppedImageData { get; set; }
@@ -64,7 +65,7 @@ namespace DNNDetector.Model
 
         public void Print()
         {
-            Console.WriteLine($"Index:{Index} ObjID:{ObjId} TrackID:{TrackId} Type:{ObjName} Conf:{Confidence} at: {ElapsedTime}");
+            Console.WriteLine($"Index:{Index} ObjID:{ObjId} FrameIndex: {FrameIndex} TrackID:{TrackId} Type:{ObjName} Model:{Model} Conf:{Confidence} at: {ElapsedTime}");
         }
     }
 }

@@ -12,7 +12,6 @@ namespace FramePreProcessor
         public static Mat returnFrame(Mat sourceMat, int frameIndex, int SAMPLING_FACTOR, double RESOLUTION_FACTOR, bool display)
         {
             Mat resizedFrame = null;
-
             if (frameIndex % SAMPLING_FACTOR != 0) return resizedFrame;
 
             try

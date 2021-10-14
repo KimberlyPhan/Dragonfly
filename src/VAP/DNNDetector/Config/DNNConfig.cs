@@ -16,5 +16,7 @@
         public static double MIN_SCORE_FOR_LINEBBOX_OVERLAP_SMALL { get; set; } = 0;
 
         public static double MIN_SCORE_FOR_LINEBBOX_OVERLAP_LARGE { get; set; } = 0.2;
+        public static string YOLO_CONFIG { get; set; } = "YoloV3Coco";
+        public static string YOLO_TINY_CONFIG { get; set; } = "YoloV3TinyCoco";
     }
 }

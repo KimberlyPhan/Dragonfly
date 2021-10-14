@@ -17,7 +17,7 @@ namespace DarknetDetector
 {
     public class LineTriggeredDNNDarknet
     {
-        static string YOLOCONFIG = "YoloV3TinyCoco"; // "cheap" yolo config folder name
+        static string YOLOCONFIG = DNNConfig.YOLO_TINY_CONFIG; // "cheap" yolo config folder name
         FrameDNNDarknet frameDNNYolo;
         FrameBuffer frameBufferLtDNNYolo;
         Dictionary<string, int> counts_prev = new Dictionary<string, int>();
@@ -55,11 +55,12 @@ namespace DarknetDetector
                             int lineID = Array.IndexOf(counts.Keys.ToArray(), lane);
                             frameDNNYolo.SetTrackingPoint(new System.Drawing.Point((int)((lines[lineID].coordinates.p1.X + lines[lineID].coordinates.p2.X) / 2),
                                                                 (int)((lines[lineID].coordinates.p1.Y + lines[lineID].coordinates.p2.Y) / 2))); //only needs to check the last line in each row
-                            
+
                             int frameIndexYolo = frameIndex - 1;
                             DateTime start = DateTime.Now;
                             List<YoloTrackingItem> analyzedTrackingItems = null;
 
+                            List<Item> ltDNNItem = new List<Item>();
                             while (frameIndex - frameIndexYolo < frameBufferArray.Count())
                             {
                                 Console.WriteLine($"** Calling DarkNet Cheap on {frameBufferArray.Count() - (frameIndex - frameIndexYolo)}");
@@ -71,7 +72,6 @@ namespace DarknetDetector
                                 // object detected by cheap YOLO
                                 if (analyzedTrackingItems != null)
                                 {
-                                    List<Item> ltDNNItem = new List<Item>();
                                     foreach (YoloTrackingItem yoloTrackingItem in analyzedTrackingItems)
                                     {
                                         Item item = Item(yoloTrackingItem);
@@ -88,10 +88,10 @@ namespace DarknetDetector
                                         File.WriteAllBytes(@OutputFolder.OutputFolderAll + blobName_Cheap, yoloTrackingItem.TaggedImageData);
                                     }
                                     updateCount(counts);
-                                    return ltDNNItem;
                                 }
                                 frameIndexYolo--;
                             }
+                            return ltDNNItem;
                         }
                     }
                 }
@@ -99,6 +99,78 @@ namespace DarknetDetector
             updateCount(counts);
 
             return null;
+        }
+
+        public List<Item> Run(Mat frame, int frameIndex, List<(string key, (System.Drawing.Point p1, System.Drawing.Point p2) coordinates)> lines, HashSet<string> category)
+        {
+
+            List<Item> ltDNNItem = new List<Item>();
+            if (lines == null)
+            {
+                List<YoloTrackingItem> analyzedTrackingItems = null;
+
+                Console.WriteLine($"** Calling DarkNet Cheap on {frameIndex}");
+                byte[] imgByte = Utils.Utils.ImageToByteBmp(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frame));
+
+                analyzedTrackingItems = frameDNNYolo.Detect(imgByte, category, 0, System.Drawing.Brushes.Pink, DNNConfig.MIN_SCORE_FOR_LINEBBOX_OVERLAP_LARGE, 0);
+
+                // object detected by cheap YOLO
+                if (analyzedTrackingItems != null)
+                {
+                    foreach (YoloTrackingItem yoloTrackingItem in analyzedTrackingItems)
+                    {
+                        Item item = Item(yoloTrackingItem);
+                        item.RawImageData = imgByte;
+                        item.TriggerLine = "notSet" ;
+                        item.TriggerLineID = 0;
+                        item.Model = "Cheap";
+                        ltDNNItem.Add(item);
+
+                        // output cheap YOLO results
+                        string blobName_Cheap = $@"frame-{frameIndex}-Cheap-{yoloTrackingItem.Confidence}.jpg";
+                        string fileName_Cheap = @OutputFolder.OutputFolderLtDNN + blobName_Cheap;
+                        File.WriteAllBytes(fileName_Cheap, yoloTrackingItem.TaggedImageData);
+                        File.WriteAllBytes(@OutputFolder.OutputFolderAll + blobName_Cheap, yoloTrackingItem.TaggedImageData);
+                    }
+                }
+            }
+            else
+            {
+                for (int lineID = 0; lineID < lines.Count; lineID++)
+                {
+                    frameDNNYolo.SetTrackingPoint(new System.Drawing.Point((int)((lines[lineID].coordinates.p1.X + lines[lineID].coordinates.p2.X) / 2),
+                                                           (int)((lines[lineID].coordinates.p1.Y + lines[lineID].coordinates.p2.Y) / 2)));
+
+
+                    List<YoloTrackingItem> analyzedTrackingItems = null;
+
+                    Console.WriteLine($"** Calling DarkNet Cheap on {frameIndex}");
+                    byte[] imgByte = Utils.Utils.ImageToByteBmp(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frame));
+
+                    analyzedTrackingItems = frameDNNYolo.Detect(imgByte, category, lineID, System.Drawing.Brushes.Pink, DNNConfig.MIN_SCORE_FOR_LINEBBOX_OVERLAP_LARGE, 0);
+
+                    // object detected by cheap YOLO
+                    if (analyzedTrackingItems != null)
+                    {
+                        foreach (YoloTrackingItem yoloTrackingItem in analyzedTrackingItems)
+                        {
+                            Item item = Item(yoloTrackingItem);
+                            item.RawImageData = imgByte;
+                            item.TriggerLine = lines[lineID].key; ;
+                            item.TriggerLineID = lineID;
+                            item.Model = "Cheap";
+                            ltDNNItem.Add(item);
+
+                            // output cheap YOLO results
+                            string blobName_Cheap = $@"frame-{frameIndex}-Cheap-{yoloTrackingItem.Confidence}.jpg";
+                            string fileName_Cheap = @OutputFolder.OutputFolderLtDNN + blobName_Cheap;
+                            File.WriteAllBytes(fileName_Cheap, yoloTrackingItem.TaggedImageData);
+                            File.WriteAllBytes(@OutputFolder.OutputFolderAll + blobName_Cheap, yoloTrackingItem.TaggedImageData);
+                        }
+                    }
+                }
+            }
+            return ltDNNItem;
         }
 
         Item Item(YoloTrackingItem yoloTrackingItem)

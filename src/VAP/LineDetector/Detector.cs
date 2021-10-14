@@ -8,6 +8,7 @@ using System.IO;
 using OpenCvSharp;
 using Utils.Config;
 using BGSObjectDetector;
+using System.Text;
 
 namespace LineDetector
 {
@@ -57,8 +58,9 @@ namespace LineDetector
         ///   <para>The first dictionary contains the number of items which cross the lines of interest, indexed by line name.</para>
         ///   <para>The second dictionary contains a boolean for each line indicating whether or not an item is present at that line.</para>
         /// </returns>
-        public (Dictionary<string, int>, Dictionary<string, bool>) updateLineResults(Mat frame, int frameIndex, Mat fgmask, List<Box> boxes)
+        public (Dictionary<string, int>, Dictionary<string, bool>, bool hasNewObject) updateLineResults(Mat frame, int frameIndex, Mat fgmask, List<Box> boxes)
         {
+            bool foundNewObject = false;
             if (frameIndex > START_DELAY)
             {
                 Bitmap fgmaskBit = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(fgmask);
@@ -88,6 +90,7 @@ namespace LineDetector
                     int diff = Math.Abs(counts[lane] - counts_prev[lane]);
                     if (diff > 0) //object detected by BGS-based counter
                     {
+                        foundNewObject = true;
                         Console.WriteLine($"BGS-based detected Line: {lane}\tCounts: {counts[lane]}");
                         string blobName_BGS = $@"frame-{frameIndex}-BGS-{lane}-{counts[lane]}.jpg";
                         string fileName_BGS = @OutputFolder.OutputFolderBGSLine + blobName_BGS;
@@ -116,7 +119,7 @@ namespace LineDetector
                 updateCount(lane, occupancy);
             }
 
-            return (counts, occupancy);
+            return (counts, occupancy, foundNewObject);
         }
 
         bool occupancyChanged(string lane)

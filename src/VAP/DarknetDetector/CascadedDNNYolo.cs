@@ -15,7 +15,7 @@ namespace DarknetDetector
 {
     public class CascadedDNNDarknet
     {
-        static string YOLOCONFIG = "YoloV3Coco"; // "cheap" yolo config folder name
+        public static string YOLOCONFIG = DNNConfig.YOLO_CONFIG; // "cheap" yolo config folder name
         FrameDNNDarknet frameDNNYolo;
         FrameBuffer frameBufferCcDNN;
 

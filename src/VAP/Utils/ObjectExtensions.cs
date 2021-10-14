@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Utils
 {
@@ -20,6 +22,17 @@ namespace Utils
             {
                 return string.Empty;
             }
+        }
+
+        public static string ListToString<T>(this List<T> list)
+        {
+            var stringBuilder = new StringBuilder();
+            foreach (var item in list)
+            {
+                stringBuilder.AppendLine(item.ToString());
+            }
+
+            return stringBuilder.ToString();
         }
     }
 }

@@ -1,4 +1,4 @@
-# Microsoft Rocket Video Analytics Platform
+# Dragonfly based on Microsoft Rocket Video Analytics Platform
 
 A highly extensible software stack to empower everyone to build practical real-world live video analytics applications for object detection and counting/alerting with cutting edge machine learning algorithms. The repository features a hybrid edge-cloud video analytics pipeline (built on **C# .NET Core**), which allows **TensorFlow DNN model plug-in**, **GPU/FPGA acceleration**, **docker containerization/Kubernetes orchestration**, and **interactive querying** for after-the-fact analysis. A brief summary of Rocket platform can be found inside :memo:[Rocket-features-and-pipelines.pdf](https://aka.ms/Microsoft-Rocket-Video-Analytics-Platform-Rocket-features-and-pipelines.pdf). 
 
@@ -16,7 +16,7 @@ Feel free to check out our :memo:[webinar on Rocket](https://note.microsoft.com/
 * Follow [instructions](https://dotnet.microsoft.com/download) to install .NET Core 2.2 (2.2.102 is preferred).
 
 * To enable GPU support, install [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) and [cuDNN](https://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html#download). Please also make sure your [NVIDIA driver](https://www.nvidia.com/Download/index.aspx?lang=en-us) is up-to-date. 
-* *** From Kim: I installed the latest CUDA and cuDNN pair and it is working fine, so you can follow these instructions replacing the folder with the latest version 14 instead of 8)
+* *** You can install the latest CUDA and cuDNN pair and it is working fine, so you can follow these instructions replacing the folder with the latest version 14 instead of 8)
 	* **CUDA 8.0** (e.g., cuda_8.0.61_win10_network.exe) is needed for Darknet (e.g., YOLO) models.
 
 		After installation, please make sure files in `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\extras\visual_studio_integration\MSBuildExtensions` are copied to `C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCTargets\BuildCustomizations`

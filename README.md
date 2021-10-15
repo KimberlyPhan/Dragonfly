@@ -55,15 +55,9 @@ A line configuration file `sample.txt` manually created based on `sample.mp4` is
 #### Build on Windows
 * Run `Config.bat` before the first time you run Rocket to download pre-compiled OpenCV and TensorFlow binaries as well as Darknet YOLO weights files. It may take few minutes depending on your network status. Proceed only when all downloads finish. YOLOv3 and Tiny YOLOv3 are already included in Rocket. You can plug-in other [YOLO models](https://pjreddie.com/darknet/yolo/) as you wish.
 * Launch `VAP.sln` in `src\VAP\` from Visual Studio.
-* Set pipeline config `PplConfig` in VideoPipelineCore - App.config. We have pre-compiled six configurations in the code. Pipeline descriptions are also included in :memo:[Rocket-features-and-pipelines.pdf](https://aka.ms/Microsoft-Rocket-Video-Analytics-Platform-Rocket-features-and-pipelines.pdf).
-	* 0: Line-based counting
-    * 1: Darknet Yolo v3 on every frame ([slide #7](https://aka.ms/Microsoft-Rocket-Video-Analytics-Platform-Rocket-features-and-pipelines.pdf#page=7))
-    * 2: TensorFlow FastRCNN on every frame ([slide #8](https://aka.ms/Microsoft-Rocket-Video-Analytics-Platform-Rocket-features-and-pipelines.pdf#page=8))
-    * 3: Background subtraction-based (BGS) early filtering -> Darknet Tiny Yolo -> Darknet Yolo v3 ([slide #9](https://aka.ms/Microsoft-Rocket-Video-Analytics-Platform-Rocket-features-and-pipelines.pdf#page=9))
-    * 4: BGS early filtering -> Darknet Tiny Yolo -> Database (ArangoDB and blob storage on Azure) ([slide #10](https://aka.ms/Microsoft-Rocket-Video-Analytics-Platform-Rocket-features-and-pipelines.pdf#page=10))
-    * 5: BGS early filtering -> TensorFlow Fast R-CNN -> Azure Machine Learning (cloud) ([slide #11](https://aka.ms/Microsoft-Rocket-Video-Analytics-Platform-Rocket-features-and-pipelines.pdf#page=11))
+* Original Pipeline descriptions are also included in :memo:[Rocket-features-and-pipelines.pdf](https://aka.ms/Microsoft-Rocket-Video-Analytics-Platform-Rocket-features-and-pipelines.pdf). Have been changed to Yolo, storage and MongoDB.
 
-* (Optional) Set up your own database and Azure Machine Learning service if `PplConfig` is set to 4 or 5.
+* Set up your own storage and database and change the connection strings MongoDBConnectionString and StorageConnectionString.
 	* **Azure Database**:
 		* Deploy SQL database like [MySQL](https://docs.microsoft.com/en-us/azure/mysql/quickstart-create-mysql-server-database-using-azure-portal) or NoSQL database such as [ArangoDB](https://azuremarketplace.microsoft.com/en/marketplace/apps/arangodb.arangodb?tab=Overview) on Azure by creating a VM.
 		* Supply database settings (e.g., server name, user name, credentials etc.) to Rocket in `App.Config`. 
@@ -76,8 +70,8 @@ A line configuration file `sample.txt` manually created based on `sample.mp4` is
 
 * Build the solution.
 * Run the code.
-	* Using Visual Studio: set VideoPipelineCore - Property - Debug - Application Arguments `<video_file/camera_url> <line_detection_config_file> <sampling_factor> <resolution_factor> <object_category>`. To run Rocket on the sample video, for example, arguments can be set to `sample.mp4 sample.txt 1 1 car`.
-	* Using Command Line (CMD or PowerShell): run `dotnet .\VideoPipelineCore.dll <video_file/camera_url> <line_detection_config_file> <sampling_factor> <resolution_factor> <object_category>` in `\src\VAP\VideoPipelineCore\bin\Debug\netcoreapp2.2`. For instance, `dotnet .\VideoPipelineCore.dll sample.mp4 sample.txt 1 1 car`.
+	* Using Visual Studio: set VideoPipelineCore - Property - Debug - Application Arguments `<video_file/camera_url> <sampling_factor> <resolution_factor>`. To run Rocket on the sample video, for example, arguments can be set to `sample.mp4 sample.txt 1 1 car`.
+	* Using Command Line (CMD or PowerShell): run `dotnet .\VideoPipelineCore.dll <video_file/camera_url> <sampling_factor> <resolution_factor>` in `\src\VAP\VideoPipelineCore\bin\Debug\netcoreapp2.2`. For instance, `dotnet .\VideoPipelineCore.dll sample.mp4 1 1`.
 
 #### Build on Linux
 We have pre-built a Rocket docker image from [docker branch](https://github.com/microsoft/Microsoft-Rocket-Video-Analytics-Platform/tree/docker/) with local processing only ([slide #12](https://aka.ms/Microsoft-Rocket-Video-Analytics-Platform-Rocket-features-and-pipelines.pdf#page=12) without cloud parts). The image is hosted on [Docker Hub](https://hub.docker.com/), a public library and community for container images, and you will be asked to login before pull/push images (sign up first if you don't have an account).

@@ -12,6 +12,7 @@
         public static int ValidRange { get; set; } = 200; // pixels. Deprecated with overlap checking instead.
 
         public static double MIN_SCORE_FOR_TFOBJECT_OUTPUT { get; set; } = 0.5; //TFWrapper.cs
+        public static double MIN_CONFIDENCE_SCORE { get; set; } = 0.5;
 
         public static double MIN_SCORE_FOR_LINEBBOX_OVERLAP_SMALL { get; set; } = 0;
 

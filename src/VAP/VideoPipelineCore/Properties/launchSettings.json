@@ -2,7 +2,7 @@
   "profiles": {
     "Sample (cars)": {
       "commandName": "Project",
-      "commandLineArgs": "SamplePathAreaTraining.mp4 SamplePathAreaTraining.txt 1 1 all"
+      "commandLineArgs": "sample.mp4 5 1"
     },
     "Sample (all categories)": {
       "commandName": "Project",

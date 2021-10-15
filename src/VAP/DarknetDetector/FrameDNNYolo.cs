@@ -66,19 +66,6 @@ namespace DarknetDetector
             if (_lines != null)
             {
                 List<YoloTrackingItem> validObjects = new List<YoloTrackingItem>();
-
-                ////--------------Output images with all bboxes----------------
-                //byte[] canvas = new byte[imgByte.Length];
-                //canvas = imgByte;
-                //YoloTrackingItem[] dbItems = yoloItems.ToArray();
-                //double dbOverlap;
-                //foreach (var dbItem in dbItems)
-                //{
-                //    dbOverlap = Utils.Utils.checkLineBboxOverlapRatio(lines[lineID].Item2, dbItem.X, dbItem.Y, dbItem.Width, dbItem.Height);
-                //    canvas = Utils.Utils.DrawImage(canvas, dbItem.X, dbItem.Y, dbItem.Width, dbItem.Height, bboxColor, dbOverlap.ToString());
-                //}
-                //File.WriteAllBytes(@OutputFolder.OutputFolderAll + $"tmp-{frameIndex}-{lines[lineID].Item1}.jpg", canvas);
-                ////--------------Output images with all bboxes----------------
                 
                 var overlapItems = yoloItems.Select(o => new { Overlap = Utils.Utils.checkLineBboxOverlapRatio(_lines[lineID].coordinates, o.X, o.Y, o.Width, o.Height), Bbox_x = o.X + o.Width, Bbox_y = o.Y + o.Height, Distance = this.Distance(_lines[lineID].coordinates, o.Center()), Item = o })
                     .Where(o => o.Bbox_x <= image.Width && o.Bbox_y <= image.Height && o.Overlap >= min_score_for_linebbox_overlap).OrderBy(o => o.Distance);
@@ -97,13 +84,13 @@ namespace DarknetDetector
             }
         }
 
-        public List<Item> Run(byte[] imgByte, int frameIndex, List<(string key, (Point p1, Point p2) coordinates)> lines, HashSet<string> category, Brush bboxColor)
+        public List<Item> Run(byte[] imgByte, int frameIndex, HashSet<string> category, Brush bboxColor)
         {
             List<Item> frameDNNItem = new List<Item>();
 
             IEnumerable<YoloTrackingItem> yoloItems = frameYoloTracking.Analyse(imgByte, category, bboxColor);
 
-            if (lines == null)
+            if (_lines == null)
             {
                 List<YoloTrackingItem> analyzedTrackingItems = OverlapVal(imgByte, yoloItems, 0, bboxColor, DNNConfig.MIN_SCORE_FOR_LINEBBOX_OVERLAP_LARGE);
                 if (analyzedTrackingItems == null) return null;
@@ -119,20 +106,19 @@ namespace DarknetDetector
                     it.Model = "FramedYolo";
 
                     //--------------output frameDNN results - one bbox per image--------------
-                    string blobName_FrameDNN = $@"frame-{frameIndex}-FrameDNN-{yoloTrackingItem.Confidence}.jpg";
+                    string blobName_FrameDNN = $@"frame-{frameIndex}-{yoloTrackingItem.Type}-{yoloTrackingItem.Confidence}.jpg";
                     string fileName_FrameDNN = @OutputFolder.OutputFolderFrameDNNDarknet + blobName_FrameDNN;
-                    File.WriteAllBytes(fileName_FrameDNN, yoloTrackingItem.TaggedImageData);
-                    //File.WriteAllBytes(@OutputFolder.OutputFolderAll + blobName_FrameDNN, yoloTrackingItem.TaggedImageData);
+                    //File.WriteAllBytes(fileName_FrameDNN, yoloTrackingItem.TaggedImageData);
                     //--------------output frameDNN results - one bbox per image--------------
                 }
                 DrawAllBb(frameIndex, imgByte, analyzedTrackingItems, bboxColor);
             }
             else
             {
-                for (int lineID = 0; lineID < lines.Count; lineID++)
+                for (int lineID = 0; lineID < _lines.Count; lineID++)
                 {
-                    frameYoloTracking.SetTrackingObject(new Point((int)((lines[lineID].coordinates.p1.X + lines[lineID].coordinates.p2.X) / 2),
-                                                                    (int)((lines[lineID].coordinates.p1.Y + lines[lineID].coordinates.p2.Y) / 2)));
+                    frameYoloTracking.SetTrackingObject(new Point((int)((_lines[lineID].coordinates.p1.X + _lines[lineID].coordinates.p2.X) / 2),
+                                                                    (int)((_lines[lineID].coordinates.p1.Y + _lines[lineID].coordinates.p2.Y) / 2)));
                     List<YoloTrackingItem> analyzedTrackingItems = OverlapVal(imgByte, yoloItems, lineID, bboxColor, DNNConfig.MIN_SCORE_FOR_LINEBBOX_OVERLAP_LARGE);
                     if (analyzedTrackingItems == null) continue;
 
@@ -141,16 +127,15 @@ namespace DarknetDetector
                         Item it = Item(yoloTrackingItem);
                         it.RawImageData = imgByte;
                         it.TriggerLineID = lineID;
-                        it.TriggerLine = lines[lineID].key;
+                        it.TriggerLine = _lines[lineID].key;
                         it.FrameIndex = frameIndex;
                         frameDNNItem.Add(it);
                         it.Model = "FramedYolo";
 
                         //--------------output frameDNN results - one bbox per image--------------
-                        string blobName_FrameDNN = $@"frame-{frameIndex}-FrameDNN-{yoloTrackingItem.Confidence}.jpg";
+                        string blobName_FrameDNN = $@"frame-{frameIndex}-{yoloTrackingItem.Type}-{yoloTrackingItem.Confidence}.jpg";
                         string fileName_FrameDNN = @OutputFolder.OutputFolderFrameDNNDarknet + blobName_FrameDNN;
                         File.WriteAllBytes(fileName_FrameDNN, yoloTrackingItem.TaggedImageData);
-                        //File.WriteAllBytes(@OutputFolder.OutputFolderAll + blobName_FrameDNN, yoloTrackingItem.TaggedImageData);
                         //--------------output frameDNN results - one bbox per image--------------
                     }
                     DrawAllBb(frameIndex, imgByte, analyzedTrackingItems, bboxColor);
@@ -173,11 +158,12 @@ namespace DarknetDetector
 
         private void DrawAllBb(int frameIndex, byte[] imgByte, List<YoloTrackingItem> items, Brush bboxColor)
         {
+            if (items == null || items.Count == 0) return;
             byte[] canvas = new byte[imgByte.Length];
             canvas = imgByte;
             foreach (var item in items)
             {
-                canvas = Utils.Utils.DrawImage(canvas, item.X, item.Y, item.Width, item.Height, bboxColor);
+                canvas = Utils.Utils.DrawImage(canvas, item.X, item.Y, item.Width, item.Height, bboxColor, item.Type);
             }
             File.WriteAllBytes(@OutputFolder.OutputFolderAll + $"frame-{frameIndex}.jpg", canvas);
         }

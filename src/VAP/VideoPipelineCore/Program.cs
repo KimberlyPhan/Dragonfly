@@ -27,10 +27,10 @@ namespace VideoPipelineCore
             Console.Clear();
 
             //parse arguments
-            if (args.Length < 4)
+            if (args.Length < 3)
             {
                 Console.WriteLine(args.Length);
-                Console.WriteLine("Usage: <exe> <video url> <cfg file> <samplingFactor> <resolutionFactor> <category1> <category2> ...");
+                Console.WriteLine("Usage: <exe> <video url> <samplingFactor> <resolutionFactor>");
                 return;
             }
 
@@ -45,35 +45,24 @@ namespace VideoPipelineCore
                 isVideoStream = false;
                 videoUrl = @"..\..\..\..\..\..\media\" + args[0];
             }
-            string lineFile = @"..\..\..\..\..\..\cfg\" + args[1];
-            int SAMPLING_FACTOR = int.Parse(args[2]);
-            double RESOLUTION_FACTOR = double.Parse(args[3]);
+            int SAMPLING_FACTOR = int.Parse(args[1]);
+            double RESOLUTION_FACTOR = double.Parse(args[2]);
 
-            HashSet<string> categories = new HashSet<string>();
-            for (int i = 4; i < args.Length; i++)
-            {
-                categories.Add(args[i]);
-            }
-
-            if (categories.Contains("all"))
-            {
-                categories.Clear();
-                //categories = new List<string>() { "person", "bicycle", "car", "motorcycle", 
-                //    "truck", "boat", "dog", "horse", "backpack", "umbrella", "handbag", "tie", 
-                //    "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", 
-                //    "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "" +
-                //    "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", 
-                //    "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch", "potted plant", "bed", 
-                //    "dining table", "toilet", "tv", "laptop", "mouse", "keyboard", "cell phone", "microwave", 
-                //    "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", 
-                //    "hair drier", "toothbrush" }.ToHashSet<string>();
-            }
+            HashSet<string> categories = null;
+            // In case we want to be more precise and only search for certain categories
+            // categories = new List<string>() { "person", "bicycle", "car", "motorcycle", 
+            //    "truck", "boat", "dog", "horse", "backpack", "umbrella", "handbag", "tie", 
+            //    "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", 
+            //    "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "" +
+            //    "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", 
+            //    "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch", "potted plant", "bed", 
+            //    "dining table", "toilet", "tv", "laptop", "mouse", "keyboard", "cell phone", "microwave", 
+            //    "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", 
+            //    "hair drier", "toothbrush" }.ToHashSet<string>();
 
             //initialize pipeline settings
-            int pplConfig = Convert.ToInt16(ConfigurationManager.AppSettings["PplConfig"]);
             bool loop = false;
             bool displayRawVideo = false;
-            bool displayBGSVideo = true;
             Utils.Utils.cleanFolderAll();
 
             //create pipeline components (initialization based on pplConfig)
@@ -81,100 +70,20 @@ namespace VideoPipelineCore
             //-----Decoder-----
             Decoder.Decoder decoder = new Decoder.Decoder(videoUrl, loop);
 
-            //-----Background Subtraction-based Detector-----
-            BGSObjectDetector.BGSObjectDetector bgs = new BGSObjectDetector.BGSObjectDetector();
-
-            //-----Line Detector-----
-            Dictionary<string, bool> occupancy = null;
-            Dictionary<string, int> counts = null;
-            Detector lineDetector = new Detector(SAMPLING_FACTOR, RESOLUTION_FACTOR, lineFile, displayBGSVideo);
-            //List<(string key, (System.Drawing.Point p1, System.Drawing.Point p2) coordinates)> lines = lineDetector?.multiLaneDetector?.getAllLines();
-            // Dont care about lines
-            List<(string key, (System.Drawing.Point p1, System.Drawing.Point p2) coordinates)> lines = null;
-
-
-            //-----LineTriggeredDNN (Darknet)-----
-            LineTriggeredDNNDarknet ltDNNDarknet = null;
-            List<Item> ltDNNItemListDarknet = null;
-            if (new int[] { 1, 3, 4 }.Contains(pplConfig))
-            {
-                ltDNNDarknet = new LineTriggeredDNNDarknet(lines);
-                ltDNNItemListDarknet = new List<Item>();
-            }
-
-            //-----LineTriggeredDNN (TensorFlow)-----
-            LineTriggeredDNNTF ltDNNTF = null;
-            List<Item> ltDNNItemListTF = null;
-            if (new int[] { 5,6 }.Contains(pplConfig))
-            {
-                ltDNNTF = new LineTriggeredDNNTF(lines);
-                ltDNNItemListTF = new List<Item>();
-            }
-
-            //-----LineTriggeredDNN (ONNX)-----
-            LineTriggeredDNNORTYolo ltDNNOnnx = null;
-            List<Item> ltDNNItemListOnnx = null;
-            if (new int[] { 7 }.Contains(pplConfig))
-            {
-                ltDNNOnnx = new LineTriggeredDNNORTYolo(Utils.Utils.ConvertLines(lines), "yolov3tiny");
-                ltDNNItemListOnnx = new List<Item>();
-            }
-
-            //-----CascadedDNN (Darknet)-----
-            CascadedDNNDarknet ccDNNDarknet = null;
-            List<Item> ccDNNItemListDarknet = null;
-            if (new int[] { 3 }.Contains(pplConfig))
-            {
-                ccDNNDarknet = new CascadedDNNDarknet(lines);
-                ccDNNItemListDarknet = new List<Item>();
-            }
-
-            //-----CascadedDNN (ONNX)-----
-            CascadedDNNORTYolo ccDNNOnnx = null;
-            List<Item> ccDNNItemListOnnx = null;
-            if (new int[] { 7 }.Contains(pplConfig))
-            {
-                ccDNNOnnx = new CascadedDNNORTYolo(Utils.Utils.ConvertLines(lines), "yolov3");
-                ccDNNItemListOnnx = new List<Item>();
-            }
-
             //-----DNN on every frame (Darknet)-----
-            FrameDNNDarknet frameDNNDarknet = null;
+            FrameDNNDarknet frameDNNDarknet = new FrameDNNDarknet(DNNConfig.YOLO_TINY_CONFIG, Wrapper.Yolo.DNNMode.Frame);
             List<Item> frameDNNDarknetItemList = null;
-            if (new int[] { 1 }.Contains(pplConfig))
-            {
-                frameDNNDarknet = new FrameDNNDarknet(DNNConfig.YOLO_CONFIG, Wrapper.Yolo.DNNMode.Frame, lines);
-                frameDNNDarknetItemList = new List<Item>();
-            }
-
-            //-----DNN on every frame (TensorFlow)-----
-            FrameDNNTF frameDNNTF = null;
-            List<Item> frameDNNTFItemList = null;
-            if (new int[] { 2 }.Contains(pplConfig))
-            {
-                frameDNNTF = new FrameDNNTF(lines);
-                frameDNNTFItemList = new List<Item>();
-            }
-
-            //-----DNN on every frame (ONNX)-----
-            FrameDNNOnnxYolo frameDNNOnnxYolo = null;
-            List<Item> frameDNNONNXItemList = null;
-            if (new int[] { 8 }.Contains(pplConfig))
-            {
-                frameDNNOnnxYolo = new FrameDNNOnnxYolo(Utils.Utils.ConvertLines(lines), "yolov3", Wrapper.ORT.DNNMode.Frame);
-                frameDNNONNXItemList = new List<Item>();
-            }
 
             //-----Call ML models deployed on Azure Machine Learning Workspace-----
             AMLCaller amlCaller = null;
             List<bool> amlConfirmed;
-            if (new int[] { 6 }.Contains(pplConfig))
-            {
-                amlCaller = new AMLCaller(ConfigurationManager.AppSettings["AMLHost"],
-                Convert.ToBoolean(ConfigurationManager.AppSettings["AMLSSL"]),
-                ConfigurationManager.AppSettings["AMLAuthKey"],
-                ConfigurationManager.AppSettings["AMLServiceID"]);
-            }
+           // if (new int[] { 6 }.Contains(pplConfig))
+           // {
+                //amlCaller = new AMLCaller(ConfigurationManager.AppSettings["AMLHost"],
+                //Convert.ToBoolean(ConfigurationManager.AppSettings["AMLSSL"]),
+                //ConfigurationManager.AppSettings["AMLAuthKey"],
+                //ConfigurationManager.AppSettings["AMLServiceID"]);
+           // }
 
             //-----Write to DB-----
             List<Item> ItemList = new List<Item>();
@@ -185,15 +94,11 @@ namespace VideoPipelineCore
             if (!isVideoStream)
                 videoTotalFrame = decoder.getTotalFrameNum() - 1; //skip the last frame which could be wrongly encoded from vlc capture
 
-            long teleCountsBGS = 0, teleCountsCheapDNN = 0, teleCountsHeavyDNN = 0;
-
             //RUN PIPELINE 
             DateTime startTime = DateTime.Now;
             DateTime prevTime = DateTime.Now;
             TimeSpan elsapsedTime = TimeSpan.Zero;
             List<Item> items = new List<Item>();
-            int previousItemCount = 0;
-            int currentItemCount = 0;
 
             while (true)
             {
@@ -211,118 +116,21 @@ namespace VideoPipelineCore
                 //frame pre-processor
                 frame = FramePreProcessor.PreProcessor.returnFrame(frame, frameIndex, SAMPLING_FACTOR, RESOLUTION_FACTOR, displayRawVideo);
                 frameIndex++;
-
-                elsapsedTime = TimeSpan.FromMilliseconds(frameIndex * 1000 / videoFramePerSecond);
-
-
                 if (frame == null) continue;
-                //Console.WriteLine("Frame ID: " + frameIndex);
 
-
-                //background subtractor
-                Mat fgmask = null;
-                List<Box> foregroundBoxes = bgs.DetectObjects(DateTime.Now, frame, frameIndex, out fgmask);
-                if (foregroundBoxes != null && foregroundBoxes.Count() > 0)
-                {
-                    currentItemCount = foregroundBoxes.Count();
-                    //Console.WriteLine(foregroundBoxes.ListToString());
-                }
-                else
-                {
-                    currentItemCount = 0;
-                }
-
-                bool foundNewObject = false;
-                //line detector
-                if (new int[] { 0, 3, 4, 5, 6, 7 }.Contains(pplConfig))
-                {
-                    (counts, occupancy, foundNewObject) = lineDetector.updateLineResults(frame, frameIndex, fgmask, foregroundBoxes);
-                }
-                else
-                {
-                    if (previousItemCount < currentItemCount)
-                    {
-                        foundNewObject = true;
-                    }
-                }
-
-                //cheap DNN
-                if (new int[] { 3, 4 }.Contains(pplConfig))
-                {
-                    ltDNNItemListDarknet = ltDNNDarknet.Run(frame, frameIndex, counts, lines, categories);
-                    ItemList = ltDNNItemListDarknet;
-                }
-                else if (new int[] { 5, 6 }.Contains(pplConfig))
-                {
-                    ltDNNItemListTF = ltDNNTF.Run(frame, frameIndex, counts, lines, categories);
-                    ItemList = ltDNNItemListTF;
-                }
-                else if (new int[] { 7 }.Contains(pplConfig))
-                {
-                    ltDNNItemListOnnx = ltDNNOnnx.Run(frame, frameIndex, counts, Utils.Utils.ConvertLines(lines), Utils.Utils.CatHashSet2Dict(categories), ref teleCountsCheapDNN, true);
-                    ItemList = ltDNNItemListOnnx;
-                }
-
-
-                //heavy DNN
-                if (new int[] { 3 }.Contains(pplConfig))
-                {
-                    ccDNNItemListDarknet = ccDNNDarknet.Run(frame, frameIndex, ltDNNItemListDarknet, lines, categories);
-                    if (ccDNNItemListDarknet != null && ccDNNItemListDarknet.Count > 0)
-                    {
-                        ItemList.AddRange(ccDNNItemListDarknet);
-                    }
-                }
-                else if (new int[] { 7 }.Contains(pplConfig))
-                {
-                    ccDNNItemListOnnx = ccDNNOnnx.Run(frameIndex, ItemList, Utils.Utils.ConvertLines(lines), Utils.Utils.CatHashSet2Dict(categories), ref teleCountsHeavyDNN, true);
-                    ItemList = ccDNNItemListOnnx;
-                }
-
+                elsapsedTime = videoFramePerSecond > 0 ? TimeSpan.FromMilliseconds(frameIndex * 1000 / videoFramePerSecond) : DateTime.Now - startTime;
 
                 //frameDNN with Darknet Yolo
-                if (new int[] { 1 }.Contains(pplConfig))
-                {
-                    if (foundNewObject)
-                    {
-                        //frameDNNDarknetItemList = ltDNNDarknet.Run(frame, frameIndex, lines, categories);
-                        frameDNNDarknetItemList = frameDNNDarknet.Run(Utils.Utils.ImageToByteBmp(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frame)), frameIndex, lines, categories, System.Drawing.Brushes.Pink);
-                        ItemList = frameDNNDarknetItemList;
-                    }
-                }
-
-
-                //frame DNN TF
-                if (new int[] { 2 }.Contains(pplConfig))
-                {
-                    frameDNNTFItemList = frameDNNTF.Run(frame, frameIndex, categories, System.Drawing.Brushes.Pink, 0.2);
-                    ItemList = frameDNNTFItemList;
-                }
-
-
-                //frame DNN ONNX Yolo
-                if (new int[] { 8 }.Contains(pplConfig))
-                {
-                    frameDNNONNXItemList = frameDNNOnnxYolo.Run(frame, frameIndex, Utils.Utils.CatHashSet2Dict(categories), System.Drawing.Brushes.Pink, 0, DNNConfig.MIN_SCORE_FOR_LINEBBOX_OVERLAP_SMALL, true);
-                    ItemList = frameDNNONNXItemList;
-                }
-
+                frameDNNDarknetItemList = frameDNNDarknet.Run(Utils.Utils.ImageToByteJpeg(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frame)), frameIndex, categories, System.Drawing.Brushes.Pink);
+                ItemList = frameDNNDarknetItemList;
 
                 //Azure Machine Learning
-                if (new int[] { 6 }.Contains(pplConfig))
-                {
-                    amlConfirmed = AMLCaller.Run(frameIndex, ItemList, categories).Result;
-                }
+                //amlConfirmed = AMLCaller.Run(frameIndex, ItemList, categories).Result;
 
-
-                //DB Write
-                if (new int[] { 4 }.Contains(pplConfig))
-                {
-                    Position[] dir = { Position.Unknown, Position.Unknown }; // direction detection is not included
-                    DataPersistence.PersistResult("test", videoUrl, 0, frameIndex, ItemList, dir, "Cheap", "Heavy", // ArangoDB database
-                                                            "test"); // Azure blob
-                }
-
+                ////DB Write
+                //    Position[] dir = { Position.Unknown, Position.Unknown }; // direction detection is not included
+                //    DataPersistence.PersistResult("test", videoUrl, 0, frameIndex, ItemList, dir, "Cheap", "Heavy", // ArangoDB database
+                //                                            "test"); // Azure blob
 
                 //display counts
                 if (ItemList != null)
@@ -336,24 +144,24 @@ namespace VideoPipelineCore
                         items.Add(it);
                         it.Print();
                     }
-                    
+
                     FramePreProcessor.FrameDisplay.updateKVPairs(kvpairs);
                 }
 
                 //print out stats
                 double fps = 1000 * (double)(1) / (DateTime.Now - prevTime).TotalMilliseconds;
                 double avgFps = 1000 * (long)frameIndex / (DateTime.Now - startTime).TotalMilliseconds;
-                Console.WriteLine($"Found: {currentItemCount} sFactor:{SAMPLING_FACTOR} rFactor:{RESOLUTION_FACTOR} frameID:{frameIndex} FPS:{fps} avgFPS:{avgFps} time:{elsapsedTime}");
+                Console.WriteLine($"sFactor:{SAMPLING_FACTOR} rFactor:{RESOLUTION_FACTOR} frameID:{frameIndex} FPS:{fps} avgFPS:{avgFps} time:{elsapsedTime}");
                 prevTime = DateTime.Now;
-                previousItemCount = currentItemCount;
                 ItemList?.Clear();
 
-                if(items?.Count() >= maxItemFound)
+                if (items?.Count() >= maxItemFound)
                 {
                     break;
                 }
             }
 
+            // print out results
             foreach (var item in items)
             {
                 item.Print();

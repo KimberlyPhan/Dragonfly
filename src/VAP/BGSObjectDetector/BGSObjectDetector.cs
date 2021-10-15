@@ -3,7 +3,7 @@
 
 ﻿using System;
 using System.Collections.Generic;
-
+using System.IO;
 using OpenCvSharp;
 using OpenCvSharp.Blob;
 
@@ -14,6 +14,7 @@ namespace BGSObjectDetector
         MOG2 bgs;
 
         Mat blurredFrame = new Mat();
+        Mat flippedFrame = new Mat();
         Mat fgMask = new Mat();
         Mat fgWOShadows = new Mat();
         Mat fgSmoothedMask2 = new Mat();
@@ -69,22 +70,35 @@ namespace BGSObjectDetector
 
         public List<Box> DetectObjects(DateTime timestamp, Mat image, int frameIndex, out Mat fg)
         {
+            return DetectObjects(timestamp, image, frameIndex, out fg, null, null);
+        }
+        public List<Box> DetectObjects(DateTime timestamp, Mat image, int frameIndex, out Mat fg, string filePath, string fileName)
+        {
             if (regionOfInterest != null)
                 bgs.SetRegionOfInterest(regionOfInterest);
 
             Cv2.GaussianBlur(image, blurredFrame, Size.Zero, PRE_BGS_BLUR_SIGMA);
+            LogProgress(blurredFrame, "GaussianBlur", filePath, fileName);
+
+            Cv2.Flip(blurredFrame, flippedFrame, OpenCvSharp.FlipMode.XY);
+            LogProgress(flippedFrame, "Flip", filePath, fileName);
 
             // fgMask is the original foreground bitmap returned by opencv MOG2
-            fgMask = bgs.DetectForeground(blurredFrame, frameIndex);
+            fgMask = bgs.DetectForeground(flippedFrame, frameIndex);
+            LogProgress(fgMask, "DetectForeground", filePath, fileName);
             fg = fgMask;
             if (fgMask == null)
                 return null;
 
             // pre-processing
             Cv2.Threshold(fgMask, fgWOShadows, 200, 255, ThresholdTypes.Binary);
+            LogProgress(fgMask, "Threshold", filePath, fileName);
             Cv2.MedianBlur(fgWOShadows, fgSmoothedMask2, MEDIAN_BLUR_SIZE);
+            LogProgress(fgMask, "MedianBlur", filePath, fileName);
             Cv2.GaussianBlur(fgSmoothedMask2, fgSmoothedMask3, Size.Zero, GAUSSIAN_BLUR_SIGMA);
+            LogProgress(fgMask, "GaussianBlur2", filePath, fileName);
             Cv2.Threshold(fgSmoothedMask3, fgSmoothedMask4, GAUSSIAN_BLUR_THRESHOLD, 255, ThresholdTypes.Binary);
+            LogProgress(fgMask, "Threshold2", filePath, fileName);
 
             fg = fgSmoothedMask4;
 
@@ -124,6 +138,12 @@ namespace BGSObjectDetector
             newBlobs.ForEach(b => b.Time = timestamp);
             newBlobs.ForEach(b => b.Timestamp = frameIndex);
             return newBlobs;
+        }
+        private void LogProgress(Mat mat, string details, string filePath, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(filePath) || string.IsNullOrWhiteSpace(fileName)) return;
+
+            File.WriteAllBytes($"{filePath}{fileName}_{details}.jpg", Utils.Utils.ImageToByteJpeg(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(mat)));
         }
     }
 }

@@ -40,8 +40,7 @@ namespace Wrapper.Yolo
             }
 
             // Dragonfly Don't care about distance or category or lines
-            //var probableObject = this.FindAllMatch(items, this._maxDistance, category);
-            var probableObject = items;
+            var probableObject = this.FindAllMatch(items, category);
             if (probableObject.Count() == 0)
             {
                 return null;
@@ -67,7 +66,14 @@ namespace Wrapper.Yolo
             return bestMatch?.Item;
         }
 
-        //find all match based on distance
+        private List<YoloItem> FindAllMatch(IEnumerable<YoloItem> items, HashSet<string> category)
+        {
+            if (category == null || category.Count() == 0) return items.ToList();
+
+            return items.Where(o => category.Contains(o.Type)).ToList();
+        }
+
+        //find all match based on distance and categories
         private List<YoloItem> FindAllMatch(IEnumerable<YoloItem> items, int maxDistance, HashSet<string> category)
         {
             List<YoloItem> yItems = new List<YoloItem>();

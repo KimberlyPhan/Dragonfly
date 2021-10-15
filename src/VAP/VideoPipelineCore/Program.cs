@@ -121,6 +121,12 @@ namespace VideoPipelineCore
                 //Azure Machine Learning
                 //amlConfirmed = AMLCaller.Run(frameIndex, ItemList, categories).Result;
 
+                //Fill results with calculated elapsed time
+                for (int i = 0; i < ItemList?.Count; i++)
+                {
+                    ItemList[i].ElapsedTime = elsapsedTime;
+                }
+
                 ////DB Write
                 Position[] dir = { Position.Unknown, Position.Unknown }; // direction detection is not included
                 DataPersistence.PersistResult("test", videoUrl, 0, frameIndex, ItemList, dir, "Cheap", "Heavy", // ArangoDB database

@@ -17,14 +17,16 @@ namespace FramePreProcessor
             try
             {
                 resizedFrame = sourceMat.Resize(new OpenCvSharp.Size((int)(sourceMat.Size().Width * RESOLUTION_FACTOR), (int)(sourceMat.Size().Height * RESOLUTION_FACTOR)));
+                int desireWidth = 1600;
+                Mat resizedFrameForDisplay = resizedFrame.Resize(new OpenCvSharp.Size((int)(desireWidth), (int)(sourceMat.Size().Height * desireWidth / sourceMat.Size().Width)));
                 if (display)
-                    FrameDisplay.display(resizedFrame);
+                    FrameDisplay.display(resizedFrameForDisplay);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
                 Console.WriteLine("********RESET RESIZE*****");
-                return null;
+                throw;
             }
             return resizedFrame;
         }

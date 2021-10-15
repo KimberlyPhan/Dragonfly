@@ -2,7 +2,7 @@
   "profiles": {
     "Sample (cars)": {
       "commandName": "Project",
-      "commandLineArgs": "sample.mp4 5 1"
+      "commandLineArgs": "SampleHighwaySideSearch02.mp4 10 1"
     },
     "Sample (all categories)": {
       "commandName": "Project",

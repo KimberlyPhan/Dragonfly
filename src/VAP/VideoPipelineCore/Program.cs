@@ -1,21 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-﻿using AML.Client;
-using BGSObjectDetector;
+using AML.Client;
 using DarknetDetector;
-using DNNDetector;
 using DNNDetector.Config;
 using DNNDetector.Model;
-using LineDetector;
 using OpenCvSharp;
 using PostProcessor;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
-using TFDetector;
-using Utils;
 
 namespace VideoPipelineCore
 {
@@ -71,7 +65,7 @@ namespace VideoPipelineCore
             Decoder.Decoder decoder = new Decoder.Decoder(videoUrl, loop);
 
             //-----DNN on every frame (Darknet)-----
-            FrameDNNDarknet frameDNNDarknet = new FrameDNNDarknet(DNNConfig.YOLO_TINY_CONFIG, Wrapper.Yolo.DNNMode.Frame);
+            FrameDNNDarknet frameDNNDarknet = new FrameDNNDarknet(DNNConfig.YOLO_CONFIG, Wrapper.Yolo.DNNMode.Frame);
             List<Item> frameDNNDarknetItemList = null;
 
             //-----Call ML models deployed on Azure Machine Learning Workspace-----
@@ -121,16 +115,16 @@ namespace VideoPipelineCore
                 elsapsedTime = videoFramePerSecond > 0 ? TimeSpan.FromMilliseconds(frameIndex * 1000 / videoFramePerSecond) : DateTime.Now - startTime;
 
                 //frameDNN with Darknet Yolo
-                frameDNNDarknetItemList = frameDNNDarknet.Run(Utils.Utils.ImageToByteJpeg(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frame)), frameIndex, categories, System.Drawing.Brushes.Pink);
+                frameDNNDarknetItemList = frameDNNDarknet.Run(Utils.Utils.ImageToByteBmp(OpenCvSharp.Extensions.BitmapConverter.ToBitmap(frame)), frameIndex, categories, System.Drawing.Brushes.Pink);
                 ItemList = frameDNNDarknetItemList;
 
                 //Azure Machine Learning
                 //amlConfirmed = AMLCaller.Run(frameIndex, ItemList, categories).Result;
 
                 ////DB Write
-                //    Position[] dir = { Position.Unknown, Position.Unknown }; // direction detection is not included
-                //    DataPersistence.PersistResult("test", videoUrl, 0, frameIndex, ItemList, dir, "Cheap", "Heavy", // ArangoDB database
-                //                                            "test"); // Azure blob
+                Position[] dir = { Position.Unknown, Position.Unknown }; // direction detection is not included
+                DataPersistence.PersistResult("test", videoUrl, 0, frameIndex, ItemList, dir, "Cheap", "Heavy", // ArangoDB database
+                                                            "dragonfly"); // Azure blob
 
                 //display counts
                 if (ItemList != null)

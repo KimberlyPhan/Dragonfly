@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-﻿using PostProcessor.Model;
+using PostProcessor.Model;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -200,4 +200,4 @@ namespace PostProcessor
             return response.StatusCode;
         }
     }
-}
+    }

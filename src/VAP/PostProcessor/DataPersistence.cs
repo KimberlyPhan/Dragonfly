@@ -39,7 +39,7 @@ namespace PostProcessor
                     //string blobName = it.Model == "Cheap" ? $@"frame-{frameIndex}-Cheap-{it.Confidence}.jpg" : $@"frame-{frameIndex}-Heavy-{it.Confidence}.jpg";
                     string blobUri = SendDataToCloud(azureContainerName, blobName, @OutputFolder.OutputFolderAll + blobName);
                     string serializedResult = SerializeDetectionResult(videoUrl, cameraID, frameIndex, it, objDir, blobUri, YOLOCONFIG, YOLOCONFIG_HEAVY);
-                    WriteDB(dbCollectionName, serializedResult);
+                    WriteToMongoDB(dbCollectionName, serializedResult);
                 }
             }
         }
@@ -53,6 +53,7 @@ namespace PostProcessor
         {
             Model.Consolidation detectionConsolidation = new Model.Consolidation();
             detectionConsolidation.Key = Guid.NewGuid().ToString();
+            detectionConsolidation.ID = detectionConsolidation.Key;
             detectionConsolidation.CameraID = cameraID;
             detectionConsolidation.Frame = frameIndex;
 
@@ -66,7 +67,7 @@ namespace PostProcessor
             detectionConsolidation.VideoInput = videoUrl;
             detectionConsolidation.YoloCheap = YOLOCONFIG;
             detectionConsolidation.YoloHeavy = YOLOCONFIG_HEAVY;
-            detectionConsolidation.Time = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffffff");
+            detectionConsolidation.Time = item.ElapsedTime.ToString();
 
             //Create a stream to serialize the object to.  
             MemoryStream ms = new MemoryStream();
@@ -84,6 +85,11 @@ namespace PostProcessor
             //var createCltResult = Client.CreateCollection().Result;
             var createDocResult = DBClient.CreateDocument(collectionName, content).Result;
             return (int)createDocResult;
+        }
+
+        private static void WriteToMongoDB(string collectionName, string content)
+        {
+            MongoDBClient.CreateDocument(collectionName, content);
         }
     }
 }

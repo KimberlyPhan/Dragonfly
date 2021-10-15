@@ -6,6 +6,7 @@ using DNNDetector.Model;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using Utils.Config;
@@ -165,8 +166,56 @@ namespace DarknetDetector
             {
                 canvas = Utils.Utils.DrawImage(canvas, item.X, item.Y, item.Width, item.Height, bboxColor, item.Type);
             }
-            File.WriteAllBytes(@OutputFolder.OutputFolderAll + $"frame-{frameIndex}.jpg", canvas);
+
+            // saving bitmap as jpg because it's soooooooo much smaller and human eyes can't tell the difference
+            string path = @OutputFolder.OutputFolderAll + $"frame-{frameIndex}";
+            File.WriteAllBytes(path + ".bmp", canvas);
+            //Image image = Image.FromFile(path + ".bmp");
+            //image.Save(path + ".jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
+
+            var image = ResizeImage(Image.FromFile(path + ".bmp"));
+            Bitmap bm = (Bitmap)image;
+            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
+            ImageCodecInfo ici = null;
+            foreach (ImageCodecInfo codec in codecs)
+            {
+                if (codec.MimeType == "image/jpeg")
+                    ici = codec;
+            }
+            EncoderParameters ep = new EncoderParameters();
+            ep.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, (long)80);
+            bm.Save(path + ".jpg", ici, ep);
+            bm.Dispose();
+            image.Dispose();
+            File.Delete(path + ".bmp");
         }
+
+        public static Image ResizeImage(Image imgToResize)
+        {
+            int desireWidth = 1600;
+            int calculatedHeight = imgToResize.Height * desireWidth / imgToResize.Width;
+            if (imgToResize.Width > desireWidth)
+            {
+                var x = (Image)(new Bitmap(imgToResize, new Size(desireWidth, calculatedHeight)));
+                imgToResize.Dispose();
+                return x;
+            }
+            else
+            {
+                return imgToResize;
+            }
+        }
+
+
+        //public byte[] RoundTripImage(byte[] bytes)
+        //{
+        //    using (var ms = new MemoryStream(bytes))
+        //    {
+        //        var image =  Image.FromStream(ms);
+        //        image.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+        //        return ms.ToArray();
+        //    }
+        //}
 
         Item Item(YoloTrackingItem yoloTrackingItem)
         {
